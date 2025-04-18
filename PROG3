@@ -1,0 +1,339 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <cstring>
+#include <cctype>
+#include <clocale>
+#include <limits>
+
+using namespace std;
+
+// Функция для задания 1
+void task1() {
+    cout << "Введите строку из цифр, разделенных пробелами: ";
+    string input;
+    getline(cin, input);
+
+    try {
+        if (input.empty()) {
+            throw runtime_error("Ошибка: введена пустая строка.");
+        }
+
+        for (char ch : input) {
+            if (!isdigit(ch) && !isspace(ch)) {
+                throw runtime_error("Ошибка: строка должна содержать только цифры и пробелы.");
+            }
+        }
+
+        int count = 0;
+        istringstream iss(input);
+        int num;
+        while (iss >> num) count++;
+
+        int* numbers = new int[count];
+        istringstream iss2(input);
+        int index = 0;
+        while (iss2 >> num) {
+            numbers[index++] = num;
+        }
+
+        for (int i = 0; i < count - 1; i++) {
+            for (int j = 0; j < count - i - 1; j++) {
+                if (numbers[j] > numbers[j + 1]) {
+                    swap(numbers[j], numbers[j + 1]);
+                }
+            }
+        }
+
+        cout << "Числа в порядке возрастания: ";
+        for (int i = 0; i < count; i++) {
+            cout << numbers[i] << " ";
+        }
+        cout << endl;
+
+        delete[] numbers;
+    }
+    catch (const exception& e) {
+        cerr << e.what() << endl;
+    }
+}
+
+// Функция для разделения строки на слова
+int splitString(const string& str, string words[], bool useCstyle) {
+    int wordCount = 0;
+    if (str.empty()) return 0;
+
+    if (useCstyle) {
+        char* cstr = new char[str.length() + 1];
+        strcpy(cstr, str.c_str());
+
+        const char* delim = " ,";
+        char* token = strtok(cstr, delim);
+
+        while (token != nullptr && wordCount < 100) {
+            words[wordCount++] = string(token);
+            token = strtok(nullptr, delim);
+        }
+
+        delete[] cstr;
+    }
+    else {
+        string word;
+        for (char ch : str) {
+            if (ch == ' ' || ch == ',') {
+                if (!word.empty()) {
+                    words[wordCount++] = word;
+                    word.clear();
+                }
+            }
+            else {
+                word += ch;
+            }
+        }
+        if (!word.empty()) {
+            words[wordCount++] = word;
+        }
+    }
+
+    return wordCount;
+}
+
+void task2() {
+    try {
+        cout << "Выберите способ ввода:\n1. С клавиатуры\n2. Из файла\n";
+        int inputChoice;
+        cin >> inputChoice;
+        cin.ignore();
+
+        string inputText;
+
+        if (inputChoice == 1) {
+            cout << "Введите строку: ";
+            getline(cin, inputText);
+        }
+        else if (inputChoice == 2) {
+            cout << "Введите имя файла: ";
+            string filename;
+            getline(cin, filename);
+
+            ifstream file(filename);
+            if (!file.is_open()) {
+                throw runtime_error("Ошибка: не удалось открыть файл.");
+            }
+
+            getline(file, inputText);
+            file.close();
+        }
+        else {
+            throw runtime_error("Неверный выбор способа ввода.");
+        }
+
+        for (char c : inputText) {
+            if (!isalpha(c) && c != ' ' && c != ',') {
+                throw runtime_error("Ошибка: строка содержит недопустимые символы.");
+            }
+        }
+
+        cout << "Выберите способ обработки строки:\n1. Использовать string\n2. Использовать C-строки\n";
+        int processChoice;
+        cin >> processChoice;
+        cin.ignore();
+
+        if (processChoice != 1 && processChoice != 2) {
+            throw runtime_error("Неверный выбор способа обработки.");
+        }
+
+        bool useCstyle = (processChoice == 2);
+        string words[100];
+        int wordCount = splitString(inputText, words, useCstyle);
+
+        cout << "\nа) Слова с длиной равной " << wordCount << ":" << endl;
+        bool found = false;
+        for (int i = 0; i < wordCount; i++) {
+            if (words[i].length() == wordCount) {
+                cout << words[i] << endl;
+                found = true;
+            }
+        }
+        if (!found) {
+            cout << "Слов с длиной равной " << wordCount << " не найдено." << endl;
+        }
+
+        cout << "\nб) Самое длинное слово, оканчивающееся на 'y':" << endl;
+        string longestWord;
+        int maxLength = 0;
+        for (int i = 0; i < wordCount; i++) {
+            if (!words[i].empty() && tolower(words[i].back()) == 'y') {
+                if (words[i].length() > maxLength) {
+                    maxLength = words[i].length();
+                    longestWord = words[i];
+                }
+            }
+        }
+        if (maxLength > 0) {
+            cout << longestWord << endl;
+        }
+        else {
+            cout << "Слов, оканчивающихся на 'y', не найдено." << endl;
+        }
+
+        cout << "\nв) Текст без слов, содержащих 'a':" << endl;
+        bool hasOutput = false;
+        for (int i = 0; i < wordCount; i++) {
+            bool containsA = false;
+            for (char c : words[i]) {
+                if (tolower(c) == 'a') {
+                    containsA = true;
+                    break;
+                }
+            }
+            if (!containsA) {
+                cout << words[i] << " ";
+                hasOutput = true;
+            }
+        }
+        if (!hasOutput) {
+            cout << "Все слова содержат букву 'a'";
+        }
+        cout << endl;
+
+        cout << "Хотите записать результаты в файл? (1 - да, 0 - нет): ";
+        int saveChoice;
+        cin >> saveChoice;
+        cin.ignore();
+
+        if (saveChoice == 1) {
+            cout << "Введите имя файла для сохранения: ";
+            string outputFilename;
+            getline(cin, outputFilename);
+
+            ofstream outFile(outputFilename);
+            if (!outFile.is_open()) {
+                throw runtime_error("Ошибка при создании файла.");
+            }
+
+            outFile << "Исходная строка: " << inputText << "\n\n";
+            outFile << "а) Слова с длиной равной " << wordCount << ":\n";
+            for (int i = 0; i < wordCount; i++) {
+                if (words[i].length() == wordCount) {
+                    outFile << words[i] << "\n";
+                }
+            }
+
+            outFile << "\nб) Самое длинное слово на 'y':\n";
+            if (maxLength > 0) {
+                outFile << longestWord << "\n";
+            }
+            else {
+                outFile << "Не найдено\n";
+            }
+
+            outFile << "\nв) Текст без слов с 'a':\n";
+            for (int i = 0; i < wordCount; i++) {
+                bool containsA = false;
+                for (char c : words[i]) {
+                    if (tolower(c) == 'a') {
+                        containsA = true;
+                        break;
+                    }
+                }
+                if (!containsA) {
+                    outFile << words[i] << " ";
+                }
+            }
+            outFile << "\n";
+
+            outFile.close();
+            cout << "Результаты сохранены в файл." << endl;
+        }
+    }
+    catch (const exception& e) {
+        cerr << e.what() << endl;
+    }
+}
+
+void task3() {
+    try {
+        cout << "Введите имя файла: ";
+        string filename;
+        getline(cin, filename);
+
+        cout << "Введите максимальное допустимое количество слов: ";
+        int maxWords;
+        cin >> maxWords;
+        cin.ignore();
+
+        ifstream file(filename);
+        if (!file.is_open()) {
+            throw runtime_error("Ошибка: не удалось открыть файл.");
+        }
+
+        int wordCount = 0;
+        string line;
+        while (getline(file, line)) {
+            istringstream iss(line);
+            string word;
+            while (iss >> word) {
+                wordCount++;
+                if (wordCount > maxWords) {
+                    throw runtime_error("Ошибка: количество слов превышает допустимое.");
+                }
+            }
+        }
+
+        file.clear();
+        file.seekg(0, ios::beg);
+
+        cout << "Строки без двузначных чисел:" << endl;
+        while (getline(file, line)) {
+            bool hasTwoDigit = false;
+            istringstream iss(line);
+            string word;
+
+            while (iss >> word) {
+                if (word.length() == 2 && isdigit(word[0]) && isdigit(word[1])) {
+                    hasTwoDigit = true;
+                    break;
+                }
+            }
+
+            if (!hasTwoDigit) {
+                cout << line << endl;
+            }
+        }
+
+        file.close();
+    }
+    catch (const exception& e) {
+        cerr << e.what() << endl;
+    }
+}
+
+int main() {
+    setlocale(LC_ALL, "");
+
+    while (true) {
+        cout << "\nМеню:\n";
+        cout << "1. Задание 1 (сортировка чисел)\n";
+        cout << "2. Задание 2 (работа со словами)\n";
+        cout << "3. Задание 3 (фильтрация строк)\n";
+        cout << "4. Выход\n";
+        cout << "Выберите пункт: ";
+
+        int choice;
+        cin >> choice;
+        cin.ignore();
+
+        switch (choice) {
+        case 1: task1(); break;
+        case 2: task2(); break;
+        case 3: task3(); break;
+        case 4: return 0;
+        default: cout << "Неверный выбор. Попробуйте снова.\n";
+        }
+    }
+
+    return 0;
+}
